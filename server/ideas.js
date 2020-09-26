@@ -1,4 +1,5 @@
 const express = require('express');
+const checkMillionDollarIdea = require('./checkMillionDollarIdea');
 const ideasRouter = express.Router();
 const { getAllFromDatabase, getFromDatabaseById, updateInstanceInDatabase, addToDatabase, deleteFromDatabasebyId } = require('./db');
 
@@ -9,7 +10,7 @@ ideasRouter.get('/', (req, res, next) => {
 });
 
 //POST /api/ideas to create a new idea and save it to the database.
-ideasRouter.post('/', (req, res, next) => {
+ideasRouter.post('/', checkMillionDollarIdea, (req, res, next) => {
     const newIdea = addToDatabase('ideas', req.body);
     res.status(201).send(newIdea);
 });
