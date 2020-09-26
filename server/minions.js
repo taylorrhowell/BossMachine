@@ -1,6 +1,9 @@
 const express = require('express');
-const { getAllFromDatabase, getFromDatabaseById, updateInstanceInDatabase, addToDatabase, deleteFromDatabasebyId } = require('./db');
 const minionsRouter = express.Router();
+
+//Require in all necessary functions from db
+const { getAllFromDatabase, getFromDatabaseById, updateInstanceInDatabase, addToDatabase, deleteFromDatabasebyId } = require('./db');
+
 
 //GET /api/minions to get an array of all minions.
 minionsRouter.get('/', (req, res, next) => {
@@ -30,7 +33,7 @@ minionsRouter.get('/:minionId', (req, res, next) => {
 
 //PUT /api/minions/:minionId to update a single minion by id.
 minionsRouter.put('/:minionId', (req, res, next) => {
-    updatedMinion = updateInstanceInDatabase('minions', req.body);
+    const updatedMinion = updateInstanceInDatabase('minions', req.body);
     res.status(200).send(updatedMinion);
 });
 
