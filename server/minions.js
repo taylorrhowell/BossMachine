@@ -2,7 +2,7 @@ const express = require('express');
 const minionsRouter = express.Router();
 
 //Require in all necessary functions from db
-const { getAllFromDatabase, getFromDatabaseById, updateInstanceInDatabase, addToDatabase, deleteFromDatabasebyId } = require('./db');
+const { getAllFromDatabase, getFromDatabaseById, updateInstanceInDatabase, addToDatabase, deleteFromDatabasebyId, deleteAllFromDatabase } = require('./db');
 
 
 //GET /api/minions to get an array of all minions.
@@ -39,45 +39,61 @@ minionsRouter.put('/:minionId', (req, res, next) => {
 
 //DELETE /api/minions/:minionId to delete a single minion by id. 
 minionsRouter.delete('/:minionId', (req, res, next) => {
-    deleteFromDatabasebyId('minions', req.minion.id);
-    res.status(204).send();
+    const deleted = deleteFromDatabasebyId('minions', req.minion.id);
+    if (deleted) {
+        res.status(204);
+    } else {
+        res.status(500);
+    }
+    res.send();
 });
-/* BONUS: /api/minions/:minionId/work routes
-GET /api/minions/:minionId/work
-- returns an array
-- returns an array of all all work for the specified minion
-- called with a non-numeric minion ID returns a 404 error
-- called with an invalid ID minion returns a 404 error */
+
+//GET /api/minions/:minionId/work
 minionsRouter.get('/:minionId/work', (req, res, next) => {
-    //Array of work objects for every minion
-    const allWork = getAllFromDatabase('work');
-    const minionWork = [];
-    allWork.forEach((work) => {
-        if (work.minionId === req.minion.id) {
-            minionWork.push(work);
-        };
+    const work = getAllFromDatabase('work').filter((singleWork) => {
+        return singleWork.minionId === req.params.minionId;
     });
-    res.status(200).send(minionWork);
+    res.status(200).send(work);
 });
 
-/* PUT /api/minions/:minionId/work/:workId
-- updates the correct work and returns it
-- updates the correct work item and persists to the database
-- called with a non-numeric minion ID returns a 404 error
-- called with an invalid minion ID returns a 404 error
-- called with a non-numeric work ID returns a 404 error
-- called with an invalid work ID returns a 404 error
-- called with an invalid ID does not change the database array
-- returns a 400 if a work ID with the wrong :minionId is requested */
+//POST /api/minions/:minionId/work
+minionsRouter.post('/:minionId/work', (req, res, next) => {
+    const workToAdd = req.body;
+    workToAdd.minionId = req.params.minionId;
+    const createdWork = addToDatabase('work', workToAdd);
+    res.status(201).send(createdWork);
+});
 
+//parameter check for workId
+minionsRouter.param('workId', (req, res, next,id) => {
+    const work = getFromDatabaseById('work', id);
+    if (work) {
+        req.work = work;
+        next();
+    } else {
+        res.status(404).send();
+    }
+});
 
-/* POST /api/minions/:minionId/work
-- should add a new work item if all supplied information is correct */
+//PUT /api/minions/:minionId/work/:workId
+minionsRouter.put('/:minionId/work/:workId', (req, res, next) => {
+    if (req.params.minionId !== req.body.minionId) {
+        res.status(400).send();
+    } else {
+        const updatedWork = updateInstanceInDatabase('work', req.body);
+        res.send(updatedWork);
+    }
+});
 
-/* DELETE /api/minions/:minionId/work/:workId
-- deletes the correct work by id
-- called with a non-numeric minion ID returns a 404 error
-- called with an invalid minion ID returns a 404 error
-- called with a non-numeric work ID returns a 404 error
-- called with an invalid work ID returns a 404 error */
+// DELETE /api/minions/:minionId/work/:workId
+minionsRouter.delete('/:minionId/work/:workId', (req, res, next) => {
+    const deleted = deleteFromDatabasebyId('work', req.params.workId);
+    if (deleted) {
+        res.status(204);
+    } else {
+        res.status(500);
+    }
+    res.send();
+});
+
 module.exports = minionsRouter;
